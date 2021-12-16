@@ -296,6 +296,10 @@ const You = styled.div`
 
 const Them = styled.div`
   display: flex;
+  height: max-content;
+  min-height: 40px;
+  padding-bottom: 12px;
+  margin-top: 20px;
 `;
 
 const Name = styled.div`

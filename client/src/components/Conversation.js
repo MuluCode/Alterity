@@ -398,6 +398,7 @@ const You = styled.div`
   width: 100%;
   padding: 10px 0 0 10px;
   color: var(--color-dark-grey);
+  margin-top: 20px;
 `;
 
 const Them = styled.div`
@@ -405,6 +406,7 @@ const Them = styled.div`
   width: 100%;
   padding: 10px 0 0 10px;
   color: var(--color-very-dark-grey);
+  margin-top: 20px;
 `;
 
 const SenderName = styled.div`
