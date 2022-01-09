@@ -25,11 +25,13 @@ import uranus from "../assets/planets/uranus.png";
 import pluto from "../assets/planets/pluto.png";
 
 const Settings = () => {
+  // create and pull state variables
   const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
   const [error, setError] = React.useState(null);
   const [gender, setGender] = React.useState(currentUser.gender);
   const [pGender, setPGender] = React.useState(currentUser.preferredGender);
   const [bio, setBio] = React.useState(currentUser.bio);
+  const [characterCount, setCharacterCount] = React.useState(undefined);
   const [newPreferences, setNewPreferences] = React.useState({
     Sun: "Aries",
     Moon: "Aries",
@@ -72,6 +74,24 @@ const Settings = () => {
     "Pisces",
   ];
   const chart = currentUser.chart;
+
+  // functions for updating bio
+  const handleBioOnChange = (message) => {
+    setBio(message);
+    setCharacterCount(message.length);
+  };
+  const handleBioSubmitDisable = () => {
+    if (characterCount > 565) {
+      return {
+        opacity: ".5",
+        boxShadow: "0px 0px 5px 2px var(--color-dark-grey)",
+        border: "1px solid var(--color-dark-grey)",
+        cursor: "default",
+      };
+    }
+  };
+
+  // functions for rendering user natal chart
   const handleOrb = (planet) => {
     if (planet.name === "Sun") {
       return <Orb src={sun} />;
@@ -124,6 +144,8 @@ const Settings = () => {
       return <Sign src={pisces} />;
     }
   };
+
+  // function for submitting custom settings
   const handleSubmit = (ev) => {
     ev.preventDefault();
     fetch("/api/user", {
@@ -151,6 +173,7 @@ const Settings = () => {
       });
   };
 
+  // function for submitting settings with default planet preferences and priorities
   const handleRASubmit = (ev) => {
     ev.preventDefault();
     let prefObject = {};
@@ -212,6 +235,7 @@ const Settings = () => {
         <Box2>
           <Text>
             {error && (
+              // render error notifications if settings cannot be submitted
               <Error>
                 {error}
                 <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
@@ -278,25 +302,36 @@ const Settings = () => {
               ))}
             </Category>
             <Category>
-              {!currentUser.bio ? (
+              <InputBox>
                 <BigInput
-                  placeholder="what do you want others to know about you?"
+                  placeholder={
+                    !currentUser.bio &&
+                    "what do you want others to know about you?"
+                  }
                   rows="8"
-                  onChange={(ev) => setBio(ev.target.value)}
+                  onChange={(ev) => handleBioOnChange(ev.target.value)}
+                  defaultValue={currentUser.bio && currentUser.bio}
                 />
-              ) : (
-                <BigInput
-                  rows="8"
-                  onChange={(ev) => setBio(ev.target.value)}
-                  defaultValue={currentUser.bio}
-                />
-              )}
+                <CharacterCount>
+                  {characterCount !== undefined && 565 - characterCount}
+                </CharacterCount>
+              </InputBox>
             </Category>
             <Buttons>
-              <Submit onClick={(ev) => handleSubmit(ev)}>
+              <Submit
+                //disable submit buttons if character count exceeds 565
+                disabled={characterCount > 565}
+                style={handleBioSubmitDisable()}
+                onClick={(ev) => handleSubmit(ev)}
+              >
                 Submit Custom Settings
               </Submit>
-              <Submit onClick={(ev) => handleRASubmit(ev)}>
+              <Submit
+                //disable submit buttons if character count exceeds 565
+                disabled={characterCount > 565}
+                style={handleBioSubmitDisable()}
+                onClick={(ev) => handleRASubmit(ev)}
+              >
                 Radical Alterity!
               </Submit>
             </Buttons>
@@ -305,6 +340,7 @@ const Settings = () => {
       </Box>
       <PlanetArray>
         {chart.map((planet) => (
+          //render user natal chart
           <Planet>
             {handleOrb(planet)}
             {handleSign(planet)}
@@ -394,19 +430,34 @@ const Input = styled.input`
     outline: none;
   }
 `;
-const BigInput = styled.textarea`
+const InputBox = styled.div`
   position: absolute;
-  bottom: 150px;
-  height: 140px;
+  bottom: 120px;
+  height: 180px;
   width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  background-color: var(--color-beige);
+  border-radius: 5px;
+`;
+const BigInput = styled.textarea`
+  width: 95%;
+  height: 85%;
   font-size: 18px;
   background-color: var(--color-beige);
   border-radius: none;
+  resize: none;
   &:focus {
     outline: none;
   }
 `;
-
+const CharacterCount = styled.div`
+  z-index: 5;
+  padding: 0 20px 5px 0;
+  color: var(--color-dark-mustard);
+`;
 const Buttons = styled.div`
   display: flex;
   position: absolute;

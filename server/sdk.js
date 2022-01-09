@@ -9,7 +9,8 @@ var apiKey = ASTRO_API_KEY;
 
 var getResponse = (resource, data, callback) => {
   var url = baseUrl + resource;
-  var auth = "Startup " + new Buffer(userID + ":" + apiKey).toString("base64");
+  var auth =
+    "Startup " + new Buffer.from(userID + ":" + apiKey).toString("base64");
   request(
     {
       url: url,

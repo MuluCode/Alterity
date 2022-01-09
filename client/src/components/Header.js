@@ -5,19 +5,26 @@ import Logo from "./Logo";
 import { CurrentUserContext } from "./UserContext";
 
 const Header = () => {
+  // put state variables from context
   const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
+
+  //signout function
   const handleSignOut = () => {
     setCurrentUser(null);
     window.location = "/";
   };
   return (
     <Wrapper>
-      <Name to="/">
+      <Name
+        //render logo with a link to homepage
+        to="/"
+      >
         <Logo />
         alter
       </Name>
       <Nav>
         {currentUser ? (
+          //render settings and signout link if there is a current user or sign-in and create account links if there is no user
           <>
             <StyledNavLink
               to="/settings"
@@ -62,13 +69,15 @@ const Header = () => {
 
 const Wrapper = styled.header`
   display: flex;
+  position: fixed;
   justify-content: space-between;
   align-items: center;
   background: var(--color-very-dark-grey);
   height: 110px;
   padding: var(--padding-page) 24px;
   border-bottom: 2px var(--color-dark-mustard) solid;
-  min-width: 1360px;
+  width: 100vw;
+  z-index: 10;
 `;
 const Name = styled(Link)`
   display: flex;
@@ -92,7 +101,7 @@ const Nav = styled.nav`
 const StyledNavLink = styled(NavLink)`
   background-image: url("https://images.unsplash.com/photo-1535418126925-0bfb3a0ee0d7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1887&q=80");
   border: 1px solid var(--color-dark-mustard);
-  border-radius: 10px;
+  border-radius: 20px;
   color: var(--color-dark-mustard);
   display: flex;
   justify-content: center;
@@ -124,7 +133,7 @@ const StyledNavLink = styled(NavLink)`
 const SignOut = styled.button`
   background-image: url("https://images.unsplash.com/photo-1535418126925-0bfb3a0ee0d7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1887&q=80");
   border: 1px solid var(--color-dark-mustard);
-  border-radius: 10px;
+  border-radius: 20px;
   color: var(--color-dark-mustard);
   display: flex;
   justify-content: center;

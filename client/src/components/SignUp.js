@@ -4,6 +4,7 @@ import BirthWheel from "./BirthWheel";
 import { CurrentUserContext } from "./UserContext";
 
 const SignUp = () => {
+  //create and pull state variables
   const [email, setEmail] = React.useState(null);
   const [username, setUsername] = React.useState(null);
   const [password, setPassword] = React.useState(null);
@@ -12,9 +13,9 @@ const SignUp = () => {
   const [tob, setTob] = React.useState(null);
   const [birthAddress, setBirthAddress] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const { setCurrentUser } = React.useContext(CurrentUserContext);
 
-  const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
-
+  //function to submit all values to server for account creation
   const handleClick = (ev) => {
     ev.preventDefault();
     const data = {
@@ -26,7 +27,7 @@ const SignUp = () => {
       timeOfBirth: tob,
       birthAddress: birthAddress,
     };
-    fetch("/api/user", {
+    fetch("/api/new-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,6 +47,7 @@ const SignUp = () => {
   return (
     <Wrapper>
       {error && (
+        //render error notifcation if validation fails
         <Error>
           {error}
           <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>

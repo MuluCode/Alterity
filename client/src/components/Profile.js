@@ -26,28 +26,16 @@ import uranus from "../assets/planets/uranus.png";
 import pluto from "../assets/planets/pluto.png";
 
 const Profile = () => {
+  // create and pull state variables
   const [error, setError] = React.useState(null);
   const [user, setUser] = React.useState(null);
   const [imageLoad, setImageLoad] = React.useState(false);
+  const [characterCount, setCharacterCount] = React.useState(undefined);
   const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
   const [message, setMessage] = React.useState(null);
   const { id } = useParams();
 
-  React.useEffect(() => {
-    fetch(`/api/user/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 200) {
-          setUser(data.data);
-          console.log(data.data);
-        } else if (data.status === 400) {
-          setError(data.message);
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  }, [id]);
+  // utility functions for rendering natal chart
   const handleOrb = (planet) => {
     if (planet.name === "Sun") {
       return <Orb src={sun} />;
@@ -100,7 +88,48 @@ const Profile = () => {
       return <Sign src={pisces} />;
     }
   };
+  // functions for updating bio
+  const handleBioOnChange = (message) => {
+    setMessage(message);
+    setCharacterCount(message.length);
+  };
+  const handleBioSubmitDisable = () => {
+    if (characterCount > 565) {
+      return {
+        opacity: ".5",
+        color: "var(--color-beige)",
+        backgroundColor: "rgba(181, 114, 7, 0.8)",
+        border: "1px solid rgba(181, 114, 7, 0.5)",
+        boxShadow: "0 0 3px 3px rgba(181, 114, 7, 0.5)",
+        outline: "none",
+        cursor: "default",
+      };
+    }
+  };
+  const handleBio = (ev) => {
+    ev.preventDefault();
+    fetch("/api/user/bio", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: currentUser._id,
+        bio: message,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === 200) {
+          setCurrentUser(data.data);
+          window.location.reload();
+        } else if (data.status === 400) {
+          setError(data.message);
+        } else console.log(data);
+      });
+  };
 
+  //functions for sending message from profile
   const handleMessage = (ev) => {
     ev.preventDefault();
     if (message !== null && message !== "") {
@@ -126,31 +155,33 @@ const Profile = () => {
         });
     }
   };
-  const handleBio = (ev) => {
-    ev.preventDefault();
-    fetch("/api/user/bio", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: currentUser._id,
-        bio: message,
-      }),
-    })
-      .then((response) => response.json())
+
+  //fetch user information anytime the profile id changes
+  React.useEffect(() => {
+    fetch(`/api/user/${id}`)
+      .then((res) => res.json())
       .then((data) => {
         if (data.status === 200) {
-          setCurrentUser(data.data);
-          window.location.reload();
+          setUser(data.data);
         } else if (data.status === 400) {
           setError(data.message);
-        } else console.log(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
       });
-  };
+  }, [id]);
+
   return (
     <Wrapper>
+      {error && (
+        <Error>
+          {error}
+          <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
+        </Error>
+      )}
       {user && (
+        //load natal wheel image before rendering profile card
         <Box>
           <Wheel
             src={user.wheel}
@@ -160,15 +191,6 @@ const Profile = () => {
           <Box2>
             {imageLoad && (
               <Text>
-                {error && (
-                  <Error>
-                    {error}
-                    <ErrorButton onClick={() => setError(null)}>
-                      Cool
-                    </ErrorButton>
-                  </Error>
-                )}
-
                 <>
                   <ContentBox>
                     <Wheel src={user.wheel} />
@@ -187,18 +209,29 @@ const Profile = () => {
                     <Bio>{user.bio}</Bio>
                   </ContentBox>
                   {user._id === currentUser._id ? (
+                    // if it is the current user's profile render text box to update bio
                     <FormContainer>
                       <Form>
                         <MessageBox
                           defaultValue={user.bio}
-                          onChange={(ev) => setMessage(ev.target.value)}
+                          onChange={(ev) => handleBioOnChange(ev.target.value)}
                         ></MessageBox>
-                        <Submit type="submit" onClick={(ev) => handleBio(ev)}>
+                        <CharacterCount>
+                          {characterCount !== undefined && 565 - characterCount}
+                        </CharacterCount>
+                        <Submit
+                          // disable submit button if the character count exceeds 565
+                          type="submit"
+                          style={handleBioSubmitDisable()}
+                          disabled={characterCount > 565}
+                          onClick={(ev) => handleBio(ev)}
+                        >
                           Update Bio
                         </Submit>
                       </Form>
                     </FormContainer>
                   ) : (
+                    // if it is another user's profile, use textbox to send a message
                     <FormContainer>
                       <Form>
                         <MessageBox
@@ -223,6 +256,7 @@ const Profile = () => {
       <PlanetArray>
         {user &&
           user.chart.map((planet) => (
+            // render the natal chart of user
             <Planet>
               {handleOrb(planet)}
               {handleSign(planet)}
@@ -301,7 +335,6 @@ const UserDiv = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 80px;
 `;
 const Username = styled.div`
   font-size: 30px;
@@ -378,6 +411,13 @@ const Submit = styled.button`
     outline: none;
   }
 `;
+const CharacterCount = styled.div`
+  position: absolute;
+  right: 150px;
+  bottom: 15px;
+  z-index: 5;
+  color: var(--color-dark-mustard);
+`;
 const PlanetArray = styled.div`
   display: flex;
   flex-direction: column;
@@ -413,7 +453,7 @@ const Error = styled.div`
   border-radius: 8px;
   position: absolute;
   top: 300px;
-  left: 150px;
+  left: 400px;
   display: flex;
   flex-direction: column;
   justify-content: center;

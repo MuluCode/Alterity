@@ -1,7 +1,9 @@
 import React from "react";
 import styled from "styled-components";
+import moment from "moment";
 import { CurrentUserContext } from "./UserContext";
 import { Link, useParams } from "react-router-dom";
+import ScrollToBottom from "react-scroll-to-bottom";
 import aries from "../assets/signs/aries-sign.png";
 import taurus from "../assets/signs/taurus-astrological-sign-symbol.png";
 import gemini from "../assets/signs/gemini-zodiac-sign-symbol.png";
@@ -24,23 +26,27 @@ import saturn from "../assets/planets/saturn.png";
 import neptune from "../assets/planets/neptune.png";
 import uranus from "../assets/planets/uranus.png";
 import pluto from "../assets/planets/pluto.png";
+import { style } from "@mui/system";
 
 const Conversation = () => {
+  //create and pull state variables
   const [error, setError] = React.useState(null);
-  const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
+  const { currentUser, setCurrentUser, unreadMessages } =
+    React.useContext(CurrentUserContext);
   const [conversation, setConversation] = React.useState({});
   const [chart, setChart] = React.useState(null);
   const [message, setMessage] = React.useState(null);
   const { id } = useParams();
+
+  // fetch conversation from server whenever the new message count changes
   React.useEffect(() => {
-    fetch(`/api/messages/${currentUser._id}`)
+    fetch(`/api/conversation/${currentUser._id}?other=${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.status === 200) {
-          setChart(data.data[id].chart);
-          console.log(data.data);
-          delete data.data[id].chart;
-          setConversation(data.data[id]);
+          setChart(data.data.chart);
+          delete data.data.chart;
+          setConversation(data.data);
         } else if (data.status === 400) {
           setError(data.message);
         }
@@ -48,8 +54,9 @@ const Conversation = () => {
       .catch((error) => {
         console.error("Error:", error);
       });
-  }, []);
+  }, [unreadMessages]);
 
+  // utility functions for rendering partner natal chart in conversation
   const handleOrb = (planet) => {
     if (planet.name === "Sun") {
       return <Orb src={sun} />;
@@ -102,6 +109,28 @@ const Conversation = () => {
       return <Sign src={pisces} />;
     }
   };
+
+  // function for rendering message timestamp
+  const handleTime = (timestamp) => {
+    if (
+      moment(timestamp).format("MMM DD YYYY · h:mm a").split("·")[0] ===
+      moment().format("MMM DD YYYY · h:mm a").split("·")[0]
+    ) {
+      return `Today ${
+        moment(timestamp).format("MMM DD YYYY · h:mm a").split("·")[1]
+      }`;
+    } else if (
+      moment(timestamp + 86400000)
+        .format("MMM DD YYYY · h:mm a")
+        .split("·")[0] === moment().format("MMM DD YYYY · h:mm a").split("·")[0]
+    ) {
+      return `Yesterday ${
+        moment(timestamp).format("MMM DD YYYY · h:mm a").split("·")[1]
+      }`;
+    } else return moment(timestamp).format("MMM DD YYYY · h:mm a");
+  };
+
+  // function for posting new conversation message to the server
   const handleMessage = (ev) => {
     ev.preventDefault();
     if (message !== null && message !== "") {
@@ -129,16 +158,15 @@ const Conversation = () => {
   };
   let timestampArray = Object.keys(conversation);
   const conversationArray = Object.values(conversation);
-  let messagesArray = [];
-  for (let i = 0; i < conversationArray.length; i++) {
-    const mostRecent = Math.max(...timestampArray);
-    const index = timestampArray.indexOf(String(mostRecent));
-    messagesArray.push(conversationArray[index]);
-    let updatedTimeStampArray = timestampArray.filter(
-      (thing) => thing !== String(mostRecent)
-    );
-    timestampArray = updatedTimeStampArray;
-  }
+
+  // creating reference and function for scrolling to the bottom of the conversation upon loading
+  const lastMessage = React.useRef(null);
+  const scrollToBottom = () => {
+    lastMessage.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [conversationArray]);
 
   return (
     <Wrapper>
@@ -146,6 +174,7 @@ const Conversation = () => {
         <Name>{id}</Name>
         {chart &&
           chart.map((planet) => (
+            //rendering partner chart
             <Planet>
               {handleOrb(planet)}
               {handleSign(planet)}
@@ -157,27 +186,43 @@ const Conversation = () => {
           <Box2>
             <Text>
               {error && (
+                //error notification if conversation not found
                 <Error>
                   {error}
                   <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
                 </Error>
               )}
               <ContentBox>
-                {messagesArray.map((message) => (
+                {conversationArray.map((message, index) => (
+                  // render conversation
                   <Convo>
                     {message._id === currentUser._id ? (
+                      // render messages sent by current user
                       <You>
                         <SenderName
                           style={{ width: "10%" }}
-                        >{`you:`}</SenderName>
-                        <Message style={{ width: "90%" }}>
-                          {message.message}
-                        </Message>
+                        >{`me:`}</SenderName>
+                        {index === conversationArray.length - 1 ? (
+                          <Message ref={lastMessage} style={{ width: "90%" }}>
+                            {message.message}
+                          </Message>
+                        ) : (
+                          <Message style={{ width: "90%" }}>
+                            {message.message}
+                          </Message>
+                        )}
+                        <Time>{handleTime(Number(timestampArray[index]))}</Time>
                       </You>
                     ) : (
+                      // render messages sent by conversation partner
                       <Them>
                         <SenderName>{`${message._id}:`}</SenderName>
-                        <Message>{message.message}</Message>
+                        {index === conversationArray.length - 1 ? (
+                          <Message ref={lastMessage}>{message.message}</Message>
+                        ) : (
+                          <Message>{message.message}</Message>
+                        )}
+                        <Time>{handleTime(Number(timestampArray[index]))}</Time>
                       </Them>
                     )}
                   </Convo>
@@ -186,6 +231,7 @@ const Conversation = () => {
               <FormContainer>
                 <Form>
                   <MessageBox
+                    // render render input box for sending messages
                     placeholder="well, actually, what had happened was..."
                     onChange={(ev) => setMessage(ev.target.value)}
                   ></MessageBox>
@@ -268,7 +314,8 @@ const ContentBox = styled.div`
   position: relative;
   height: max-content;
   margin-bottom: 20px;
-  min-height: 720px;
+  height: 720px;
+  overflow-y: scroll;
 `;
 
 const FormContainer = styled.div`
@@ -395,6 +442,7 @@ const Convo = styled.div`
 `;
 const You = styled.div`
   display: flex;
+  justify-content: space-between;
   width: 100%;
   padding: 10px 0 0 10px;
   color: var(--color-dark-grey);
@@ -403,6 +451,7 @@ const You = styled.div`
 
 const Them = styled.div`
   display: flex;
+  justify-content: space-between;
   width: 100%;
   padding: 10px 0 0 10px;
   color: var(--color-very-dark-grey);
@@ -410,8 +459,14 @@ const Them = styled.div`
 `;
 
 const SenderName = styled.div`
-  width: 20%;
+  width: 16% !important;
 `;
 const Message = styled.div`
-  width: 80%;
+  width: 60% !important;
+`;
+const Time = styled.div`
+  width: 20% !important;
+  font-size: 10px;
+  align-self: flex-end;
+  color: var(--color-dark-mustard);
 `;

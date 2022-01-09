@@ -26,11 +26,22 @@ import uranus from "../assets/planets/uranus.png";
 import pluto from "../assets/planets/pluto.png";
 
 const Conversations = () => {
+  // create and pull state variables
   const [error, setError] = React.useState(null);
-  const { currentUser } = React.useContext(CurrentUserContext);
-  const [conversations, setConversations] = React.useState({});
+  const { currentUser, unreadMessages } = React.useContext(CurrentUserContext);
+  const [conversations, setConversations] = React.useState([]);
+
+  // utility to cut off the render of most recent message at 60 characters
+  const handleMessageRender = (message) => {
+    if (message.length < 60) {
+      return message;
+    } else {
+      return `${message.slice(0, 60)}...`;
+    }
+  };
+  // fetch existing conersations everytime the new message count changes
   React.useEffect(() => {
-    fetch(`/api/messages/${currentUser._id}`)
+    fetch(`/api/conversations/${currentUser._id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.status === 200) {
@@ -42,16 +53,9 @@ const Conversations = () => {
       .catch((error) => {
         console.error("Error:", error);
       });
-  }, []);
+  }, [unreadMessages]);
 
-  const partnerArray = Object.keys(conversations);
-  const conversationsArray = Object.values(conversations);
-  const mostRecentMessageArray = conversationsArray.map((item) => {
-    return Math.max(
-      ...Object.keys(item).filter((timestamp) => timestamp !== "chart")
-    );
-  });
-
+  // utility functions for rendering partner natal chart in conversation
   const handleOrb = (planet) => {
     if (planet.name === "Sun") {
       return <Orb src={sun} />;
@@ -110,48 +114,45 @@ const Conversations = () => {
         <Box2>
           <Text>
             {error && (
+              //error notification if inbox can't be rendered
               <Error>
                 {error}
                 <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
               </Error>
             )}
-            {partnerArray.map((partner, index) => (
-              <Conversation to={`/conversations/${partner}`}>
-                <Partner>{partner}</Partner>
-                {conversationsArray[index][mostRecentMessageArray[index]]
-                  ._id === currentUser._id ? (
-                  <You>
-                    <Name>
-                      {`${
-                        conversationsArray[index][mostRecentMessageArray[index]]
-                          ._id
-                      }:`}
-                    </Name>
-                    <Message>
-                      {
-                        conversationsArray[index][mostRecentMessageArray[index]]
-                          .message
-                      }
-                    </Message>
-                    <Alert>open conversation to view older messages</Alert>
-                  </You>
-                ) : (
-                  <Them>
-                    <Name>
-                      {`${
-                        conversationsArray[index][mostRecentMessageArray[index]]
-                          ._id
-                      }:`}
-                    </Name>
-                    <Message>
-                      {
-                        conversationsArray[index][mostRecentMessageArray[index]]
-                          .message
-                      }
-                    </Message>
-                    <Alert>open conversation to view older messages</Alert>
-                  </Them>
-                )}
+            {conversations.map((conversation, index) => (
+              // render conversation link and most recent message
+              <Conversation
+                to={`/conversations/${conversation.partner}`}
+                style={{
+                  //backlight if message is unread
+                  ...(conversation.status &&
+                    conversation.status === "Unread" && {
+                      border: "var(--color-dark-mustard) 2px solid",
+                      boxShadow: "0 0 15px 5px var(--color-dark-mustard)",
+                    }),
+                }}
+              >
+                <Partner
+                  style={{
+                    //glow if message is unread
+                    ...(conversation.status &&
+                      conversation.status === "Unread" && {
+                        backgroundColor: "var(--color-dark-mustard)",
+                        color: "var(--color-light-grey)",
+                        boxShadow: "0 0 2px 2px var(--color-dark-mustard)",
+                      }),
+                  }}
+                >
+                  {conversation.partner}
+                </Partner>
+                <Message>
+                  <Name>{`${conversation._id}:`}</Name>
+                  <MessageText>
+                    {handleMessageRender(conversation.message)}
+                  </MessageText>
+                  <Alert>open conversation to view older messages</Alert>
+                </Message>
               </Conversation>
             ))}
           </Text>
@@ -159,6 +160,7 @@ const Conversations = () => {
       </Box>
       <PlanetArray>
         {currentUser.chart.map((planet) => (
+          //render current user's chart beside inbox
           <Planet>
             {handleOrb(planet)}
             {handleSign(planet)}
@@ -286,15 +288,7 @@ const Conversation = styled(Link)`
   text-decoration: none;
   color: var(--very-dark-grey);
 `;
-const You = styled.div`
-  display: flex;
-  height: max-content;
-  min-height: 40px;
-  padding-bottom: 12px;
-  margin-top: 20px;
-`;
-
-const Them = styled.div`
+const Message = styled.div`
   display: flex;
   height: max-content;
   min-height: 40px;
@@ -305,7 +299,7 @@ const Them = styled.div`
 const Name = styled.div`
   width: 25%;
 `;
-const Message = styled.div`
+const MessageText = styled.div`
   width: 75%;
 `;
 const Alert = styled.div`

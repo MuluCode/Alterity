@@ -27,12 +27,14 @@ import uranus from "../assets/planets/uranus.png";
 import pluto from "../assets/planets/pluto.png";
 
 const Homepage = () => {
+  //create and pull state variables
   const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
   const [error, setError] = React.useState(null);
   const [feed, setFeed] = React.useState([]);
   const [partialFeed, setPartialFeed] = React.useState([]);
   const [currentPage, setCurrentPage] = React.useState(1);
 
+  // utility functions for rendering users' natal chart
   const handleOrb = (planet) => {
     if (planet.name === "Sun") {
       return <Orb src={sun} />;
@@ -86,12 +88,13 @@ const Homepage = () => {
     }
   };
 
+  // pagination variables
   const pages = Math.ceil(feed.length / 4);
-  const pagesArray = [];
+  let pagesArray = [];
   for (let i = 1; i <= pages; i++) {
     pagesArray.push(i);
   }
-
+  // fetch all preference matches and select four per page to render
   React.useEffect(() => {
     if (currentUser && currentUser.preferences) {
       fetch(`/api/feed/${currentUser._id}`)
@@ -112,12 +115,12 @@ const Homepage = () => {
         });
     }
   }, [currentPage]);
-  console.log(feed);
 
   return (
     <UbberWrapper>
       <Wrapper>
         {error && (
+          //render error notification if matches notreceived
           <Error>
             {error}
             <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
@@ -126,10 +129,14 @@ const Homepage = () => {
         {currentUser && currentUser.preferences ? (
           <>
             {feed && (
+              //for each potential partner, render their name, bio and weight of match
               <>
                 {partialFeed.map((partner) => (
                   <PlanetArray to={`/profile/${partner._id}`}>
-                    <Name>{partner._id}</Name>
+                    <NameAndWeight>
+                      <Name>{partner._id}</Name>
+                      <Weight>{`${Math.round(partner.weight * 100)}%`}</Weight>
+                    </NameAndWeight>
 
                     {partner.chart.map((planet) => (
                       <Planet>
@@ -144,6 +151,7 @@ const Homepage = () => {
             )}
           </>
         ) : (
+          // if there is no user or user has not submitted preferences, render and about alter page
           <>
             <Margin>
               <BirthWheel />
@@ -166,22 +174,36 @@ const Homepage = () => {
                 relational pairing.
               </Description>
               <Description>
-                It is our mission to offer a tool that allows the astrologically
-                astute to select both preferred planetary positions and an order
-                of priority for each of those preferences. However, in order to
-                promote the accessibility of our application, we also provide a
-                default preference setting, which we call{" "}
+                It is our mission to offer a tool that provides the
+                astrologically astute the ability to select both preferred
+                planetary positions and an order of priority for each of those
+                preferences. For greater accessibility of our application, we
+                also provide a default preference setting, which we call{" "}
                 <RA>Radical Alterity</RA>.
               </Description>
             </Text>
           </>
         )}
       </Wrapper>
-      {partialFeed && (
+      {currentUser && partialFeed && (
+        //previous and next buttons to navigate through pages
         <ButtonWrapper>
-          {pagesArray.map((page) => {
-            return <Button onClick={() => setCurrentPage(page)}>{page}</Button>;
-          })}
+          {pagesArray.length <= currentPage && (
+            <>
+              <Button onClick={() => setCurrentPage(currentPage - 1)}>
+                Previous
+              </Button>
+              <DisabledButton>Next</DisabledButton>
+            </>
+          )}
+          {pagesArray.length > currentPage && (
+            <>
+              <DisabledButton>Previous</DisabledButton>
+              <Button onClick={() => setCurrentPage(currentPage + 1)}>
+                Next
+              </Button>
+            </>
+          )}
         </ButtonWrapper>
       )}
     </UbberWrapper>
@@ -201,6 +223,7 @@ const UbberWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   border-left: 3px var(--color-dark-mustard) solid;
+  padding-bottom: 120px;
 `;
 const Wrapper = styled.div`
   height: max-content;
@@ -300,11 +323,22 @@ const Asc = styled.div`
   font-family: var(--font-heading);
   font-size: 40px;
 `;
+
+const NameAndWeight = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin: 55px 0 7px 0;
+`;
 const Name = styled.div`
   color: var(--color-dark-mustard);
-  margin: 55px 0 7px 0;
   font-size: 22px;
   font-family: var(--font-body);
+`;
+
+const Weight = styled.div`
+  font-size: 26px;
+  color: var(--color-beige);
 `;
 
 const Bio = styled.div`
@@ -314,6 +348,8 @@ const Bio = styled.div`
 `;
 const ButtonWrapper = styled.div`
   display: flex;
+  position: absolute;
+  bottom: 20px;
   justify-content: center;
   align-items: center;
   width: 900px;
@@ -324,7 +360,7 @@ const ButtonWrapper = styled.div`
 
 const Button = styled.button`
   margin: 10px;
-  width: 50px;
+  width: 100px;
   font-family: var(--font-heading);
   cursor: pointer;
   background-color: #fffdd0;
@@ -335,4 +371,14 @@ const Button = styled.button`
     color: #fffdd0;
     border-color: #fffdd0;
   }
+`;
+
+const DisabledButton = styled.button`
+  background-color: var(--color-dark-grey);
+  color: #fffdd0;
+  border-color: #fffdd0;
+  margin: 10px;
+  width: 100px;
+  font-family: var(--font-heading);
+  cursor: default;
 `;

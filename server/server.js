@@ -4,9 +4,11 @@ const {
   createUser,
   updateSettings,
   getFeed,
-  getCurrentUser,
+  signInUser,
   getUser,
   getMessages,
+  getConversation,
+  getConversations,
   sendMessage,
   updateBio,
 } = require("./handlers");
@@ -16,13 +18,15 @@ const PORT = 8000;
 express()
   .use(express.json())
 
-  .post("/api/user", createUser)
+  .post("/api/new-user", createUser)
+  .post("/api/user", signInUser)
   .post("/api/message", sendMessage)
   .put("/api/user", updateSettings)
   .put("/api/user/bio", updateBio)
   .get("/api/feed/:id", getFeed)
-  .get("/api/user", getCurrentUser)
   .get("/api/messages/:id", getMessages)
+  .get("/api/conversations/:id", getConversations)
+  .get("/api/conversation/:id", getConversation)
   .get("/api/user/:id", getUser)
 
   .listen(PORT, function () {

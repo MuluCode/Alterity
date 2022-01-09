@@ -4,13 +4,23 @@ import BirthWheel from "./BirthWheel";
 import { CurrentUserContext } from "./UserContext";
 
 const SignIn = () => {
-  const { currentUser, setCurrentUser } = React.useContext(CurrentUserContext);
+  //create and pull state variables
+  const { setCurrentUser } = React.useContext(CurrentUserContext);
   const [error, setError] = React.useState(null);
   const [username, setUsername] = React.useState(null);
   const [password, setPassword] = React.useState(null);
+
+  //function for submitting username and password for validation
   const handleSubmit = (ev) => {
     ev.preventDefault();
-    fetch(`/api/user?username=${username}&password=${password}`)
+    const data = { username: username, password: password };
+    fetch("/api/user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.status === 200) {
@@ -27,6 +37,7 @@ const SignIn = () => {
   return (
     <Wrapper>
       {error && (
+        //render error notification if validation fails
         <Error>
           {error}
           <ErrorButton onClick={() => setError(null)}>Cool</ErrorButton>
