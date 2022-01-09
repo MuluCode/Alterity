@@ -20,7 +20,7 @@ relational pairing.
 ### Install frontend dependencies
 
 1. Open a new terminal
-2. Navigate to the server folder `cd server`
+2. Navigate to the server folder `cd client`
 3. Install the required packages `yarn install`
 4. Start server `yarn start`
 
