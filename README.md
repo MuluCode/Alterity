@@ -10,7 +10,7 @@ user to narrow their exposure to other members of the network by
 filtering them through their preferred partner configurations.
 This differentiates each user as 1 in 12 to the 11th power or 1
 in 743 billion possible profile configurations, equipping every
-user with just one more tool in the process toward willfull
+user with just one more tool in the process toward willful
 relational pairing.
 
 ![about](./assets/screenshots/HomeSansUser.png)
