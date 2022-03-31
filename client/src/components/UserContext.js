@@ -45,7 +45,8 @@ export const CurrentUserProvider = ({ children }) => {
   // check for messages every 5 seconds
   React.useEffect(() => {
     checkForMessages();
-    setInterval(checkForMessages, 5000);
+    const messageCheck = setInterval(checkForMessages, 5000);
+    return () => clearInterval(messageCheck);
   }, [currentUser]);
 
   return (
